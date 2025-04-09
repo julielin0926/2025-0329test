@@ -14,6 +14,8 @@ public class Voicekeyword : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("請說出密碼:");
+
         // 將密碼關鍵字加入 Dictionary，辨識到時執行 Unlock()
         passwords.Add(correctPassword, Unlock);
 
