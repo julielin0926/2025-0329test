@@ -1,31 +1,62 @@
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
 public class MicInput : MonoBehaviour
 {
-    public float loudnessThreshold = 0.1f;
-    private AudioSource audioSource;
+    [Header("吹氣判斷")]
+    public float ambientLevelMultiplier = 2.0f; // 幾倍環境音才算吹氣
+    public int sampleWindow = 128;              // 音量採樣範圍
 
+    [Header("目前狀態（只讀）")]
+    public float currentLoudness;
+    public float ambientLevel;
     public bool IsBlowing { get; private set; }
+
+    private AudioClip micRecord;
+    private string micDevice;
 
     void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-        audioSource.clip = Microphone.Start(null, true, 1, 44100);
-        audioSource.loop = true;
-        while (!(Microphone.GetPosition(null) > 0)) { }
-        audioSource.Play();
+        if (Microphone.devices.Length == 0)
+        {
+            Debug.LogWarning("沒有找到麥克風設備！");
+            return;
+        }
+
+        micDevice = Microphone.devices[0];
+        micRecord = Microphone.Start(micDevice, true, 10, AudioSettings.outputSampleRate);
+        ambientLevel = 0.01f; // 初始估計環境音
     }
 
     void Update()
     {
-        float[] data = new float[256];
-        audioSource.GetOutputData(data, 0);
-        float loudness = 0f;
+        currentLoudness = GetLoudness();
 
-        foreach (var sample in data)
-            loudness += Mathf.Abs(sample);
+        // 平滑追蹤背景音（只在音量較低時更新）
+        if (currentLoudness < ambientLevel)
+        {
+            ambientLevel = Mathf.Lerp(ambientLevel, currentLoudness, Time.deltaTime * 2f);
+        }
 
-        IsBlowing = loudness > loudnessThreshold;
+        // 判定是否吹氣（音量 > 環境音 * 倍率）
+        IsBlowing = currentLoudness > ambientLevel * ambientLevelMultiplier;
+    }
+
+    float GetLoudness()
+    {
+        if (micRecord == null || !Microphone.IsRecording(micDevice)) return 0f;
+
+        float[] data = new float[sampleWindow];
+        int micPos = Microphone.GetPosition(micDevice) - sampleWindow;
+        if (micPos < 0) return 0f;
+
+        micRecord.GetData(data, micPos);
+        float levelMax = 0;
+        for (int i = 0; i < sampleWindow; i++)
+        {
+            float wavePeak = Mathf.Abs(data[i]);
+            if (wavePeak > levelMax)
+                levelMax = wavePeak;
+        }
+        return levelMax;
     }
 }

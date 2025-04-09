@@ -9,7 +9,7 @@ public class TimeWindController : MonoBehaviour
     public TimePeriod currentTime = TimePeriod.Morning;
     public WindDirection currentWind = WindDirection.East;
 
-    public float timePerPeriod = 30f; // 每段持續時間（秒）
+    public float timePerPeriod = 5f; // 每段持續時間（秒）
     private float timer;
 
     public UnityEvent<TimePeriod, WindDirection> OnTimeWindChanged;

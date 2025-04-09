@@ -8,19 +8,21 @@ public class CapsuleController : MonoBehaviour
 
     void Update()
     {
-        if (micInput.IsBlowing)
+        // 只有在吹氣時才檢查風向與移動
+        if (micInput != null && micInput.IsBlowing)
         {
             Vector3 direction = Vector3.zero;
 
             switch (timeWindController.currentWind)
             {
                 case TimeWindController.WindDirection.East:
-                    direction = Vector3.right; // X+
+                    direction = Vector3.right; // 向右（東風）
                     break;
                 case TimeWindController.WindDirection.West:
-                    direction = Vector3.left; // X-
+                    direction = Vector3.left; // 向左（西風）
                     break;
                 case TimeWindController.WindDirection.None:
+                    // 無風，角色不動
                     direction = Vector3.zero;
                     break;
             }
